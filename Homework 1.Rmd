@@ -1,0 +1,176 @@
+---
+title: "Homework 1"
+author: "Johann Memmel"
+date: "January 7, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Homework 1
+## Part I
+###Q1.
+Creates new vectors for each strain and merges them into one data frame
+
+```{r}
+
+Trans1 <- c(0.17, 0.20, 0.13, 0.20, 0.24, 0.25, 0.15, 0.21, 0.21)
+Trans2 <- c(0.47, 0.21, 0.34, 0.32, 0.33, 0.29, 0.18, 0.20, 0.25)
+Common <- c(0.44, 0.33, 0.37, 0.33, 0.31, 0.27, 0.22, 0.30, 0.28)
+
+merged.data <- data.frame(Trans1,Trans2,Common)
+
+```
+
+###Q2. 
+Calculats the means of the two transgenic strains
+
+```{r}
+mean.Trans1 = mean(Trans1)
+mean.Trans2 = mean(Trans2)
+
+difference.T1T2 = abs(mean.Trans1 - mean.Trans2)
+
+```
+
+
+`r if(mean.Trans1 > mean.Trans2){"The mean of Transgenic strain A is larger than the mean of transgenic strain B with a difference of"}` 
+`r if(mean.Trans1 < mean.Trans2){"The mean of Transgenic strain B is larger than the mean of transgenic strain B with a difference of"}`
+`r difference.T1T2`
+
+
+
+###Q3.
+```{r}
+difference.CommonT1 = abs(mean(Common) - mean(Trans1))
+
+```
+
+`r if(mean(Common) - mean(Trans1)){"The mean of the common strain is larger than the mean of transgenic strain A with a difference of"}` 
+`r if(mean(Common) - mean(Trans1)){"The mean of Transgenic strain A is larger than the mean of the common strain  with a difference of"}`
+`r difference.CommonT1`
+
+###Q4.
+A histogram of the hydrogen peroxide concentrations in the common strain
+
+```{r}
+par(mar=c(5,5,5,5))
+hist(merged.data$Common, main = "Concentration of hydrogen peroxide in the common strain", ylab = "Frequency", xlab = "Concentration of hydrogen peroxide (umoles/g)", col = "blue", cex.main = .85 )
+
+```
+
+
+###Q5.
+```{r}
+Peroxide <- c(0.27, 0.21, 0.34, 0.32, 0.24, 0.29, 0.18, 0.20, 0.29)
+Growth.rate <- c(1.79, 1.01, 1.71, 1.89, 1.41, 1.15, 1.13, 1.20, 1.10)
+
+merged.Q5 <- data.frame(Peroxide,Growth.rate)
+
+```
+
+###Q6
+```{r}
+
+plot(merged.Q5$Growth.rate~merged.Q5$Peroxide, ylab = "Fungal growth rate (cm/day)", xlab = "Hydrogen peroxide concentration (umoles/g)", cex.lab = .8, col = "blue")
+```
+
+###Q7
+```{r}
+  plot(merged.Q5$Growth.rate~merged.Q5$Peroxide, ylab = "Fungal growth rate (cm/day)", xlab = "Hydrogen peroxide concentration (umoles/g)", cex.lab = .8, col = "blue")
+abline(lm(merged.Q5$Growth.rate~merged.Q5$Peroxide))
+summary(lm(merged.Q5$Growth.rate~merged.Q5$Peroxide))
+```
+
+The growth rate of the fungus increases with additional hydrogen peroxide which dissagrees with the hypothesis. If the hypothesis was correct we would expect to see the growth rate decrease as the concentration increased.
+
+
+##Part II
+###Q8.
+```{r}
+nestingData = read.csv(file.choose())
+```
+
+###Q9.
+
+```{r}
+nestingData
+dataTable = table(nestingData)
+
+dataTable
+
+```
+###Q10.
+```{r}
+barplot(dataTable, beside = TRUE, xlab = "Species", ylab = "Number of Occurances", col = c("red", "green"))
+
+```
+
+
+###Q11.
+```{r}
+names(dataTable)
+successes = c(dataTable[[2,1]], dataTable[[2,2]], dataTable[[2,3]])
+successesMean = mean(successes)
+successesSD= sd(successes)
+
+```
+The mean of the successful nesting events was `r successesMean` and the standard deviation was `r successesSD`
+
+
+
+###Q12.
+```{r}
+hawksRate = dataTable[[1,1]]/(dataTable[[2,1]]+ dataTable[[1,1]])
+leatherRate = dataTable[[1,2]]/(dataTable[[2,2]]+dataTable[[1,2]])
+oliveRate = dataTable[[1,3]]/(dataTable[[2,3]]+dataTable[[1,3]])
+
+
+```
+
+
+The species failed nesting attemps are as follows
+
+Hawksbill: `r hawksRate`
+
+Leatherback: `r leatherRate`
+
+Olive Ridley: `r oliveRate`
+
+The species with the highest proportion of failed nesting attempts was the Hawksbill. It is hard to determine which species needs the greatest conservation efforts given the low sample size present but given that limitation it appears that the Hawksback is struggling the most to reproduce.
+
+
+
+
+
+
+
+
+##Part III
+###Q13.
+```{r}
+eggData = read.csv(file.choose())
+rownames(eggData) = eggData$Nest
+eggData = eggData[2:4]
+```
+also changes the nest number into an index
+###Q14.
+```{r}
+
+boxplot(eggData,ylim = c(0,200),height = 15, ylab = "Number of Eggs Found in Each Nest", xlab = "Species", col = "cyan", names=c("Olive Ridley", "Hawksbill","Leatherback"), cex = .9)
+
+```
+
+
+###Q15.
+```{r}
+plot(eggData$Leatherback~eggData$Hawksbill, pch = 21, col = "black", bg= "cyan" , xlab = "Number of Hawksbill Turtle eggs", ylab = "Number of Leatherback Turtle eggs")
+
+```
+
+
+
+
+
