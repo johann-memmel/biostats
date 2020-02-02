@@ -1,0 +1,149 @@
+---
+title: "Homework 2"
+author: "Johann Memmel"
+date: "January 20, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Homework 2
+##Scenario 1
+
+```{r}
+data1 = read.csv("Homework 2 Scenario 1.csv")
+```
+
+The null hypothesis is that the mean level of shrimp caught in 2009 and 2010 will be  the same.
+The alternative hypothesis is that there will be a change in shrimp caught between the two years.
+
+```{r}
+hist(data1$X2009.catch..tonnes., col = rgb(0,0,1,1/2), breaks = 6, xlim = c(40000, 160000), main = "Combined Histogram of 2009 and 2010 catch (tonnes)", xlab = "Tonnes of Shrimp Caught")
+hist(data1$X2010.catch..tonnes., add=T, col = rgb(1,0,0,1/2), breaks = 6)
+```
+With the 2009 results in blue and the 2010 results in red
+
+
+
+An independent two sample T test is the correct type of test to use because the goal is to determine if there is a difference between two groups means.
+```{r}
+t.test(data1$X2010.catch..tonnes., data1$X2009.catch..tonnes.)
+qt(0.95,13)
+```
+The results show that p>0.05 so we can not reject the nulll hypothesis. Then the t observed (-1.2099) is closer to zero than the t critical (1.7709) indicating that there is not a significant diferance.
+
+The conclusion I would draw is that the null hypothesis cannot be rejected.
+
+
+##Scenario 2
+```{r}
+data2 = read.csv("Homework 2 Scenario 2.csv")
+```
+
+The null hypothesis is that the phosphorous levels are less than the maximum stated in the guildlines. The alternative hypothesis is that phosphorous levels are higher than the guildlines allow.
+
+
+```{r}
+hist(data2$Total.phosphorous..ug.L., col = rgb(0,0,1,1/2), breaks = 4, xlab = "Total Phosphorous (ug/L)", main = "Historgram of Total Phosphorous (ug/L) in lake Erie")
+```
+
+A one-tailed one sample t-test is the correct test for this dataset because we are compairing to a single known value, hence one sample, and a one-tailed due to only being interesting in if the values are larger than the known value.
+
+
+
+```{r}
+t.test(data2$Total.phosphorous..ug.L., mu=15, alternative = "greater")
+qt(0.95, 9)
+
+```
+
+The p-value of 0.04897 is below 0.05 and we therefore reject the null hypothesis. The t observed (1.8462) is also larger that the t critical (1.833113) indicating that there is a significant difference.
+
+Based on these results I would reject the null hypothesis.
+
+
+##Scenario 3
+
+```{r}
+data3 = read.csv("Homework 2 Scenario 3.csv")
+```
+
+The null hypothesis is that there will be no difference between the carnivorous and vegetarian groups. 
+The alternative hypothesis is that there is a difference between the groups
+
+
+```{r}
+hist(data3$Carnivorous, col = rgb(0,0,1,1/2), breaks = 8, xlim = c(0.4, 2.5), main = "Combined Histogram of Vegetarian (Red) and Carnivorous (Blue) growth rate", xlab = "Growth rate (% body weight/day)")
+hist(data3$Vegetarian, add=T, col = rgb(1,0,0,1/2), breaks = 8, xlim = c(0.6, 2.5))
+
+```
+
+
+
+An independent two sample T test is the correct type of test to use because the goal is to determine if there is a difference between two groups means.
+
+```{r}
+t.test(data3$Carnivorous, data3$Vegetarian)
+qt(0.95,27.862)
+```
+
+
+The results show that p<0.05 so we reject the nulll hypothesis. Then the t observed (12.237)) is far larger than  the t critical (1.7014) indicating that there is a significant diferance.
+
+The conclusion I would draw is that the null hypothesis should be rejected.
+
+
+
+##Scenario 4
+
+```{r}
+data4 = read.csv("Homework 2 Scenario 4v2.csv", fileEncoding="UTF-8-BOM", row.names = 1)
+```
+
+The null hypothesis is that the trophic level and outcomes are independent.
+The alternative hyptothesis is that the trophic levels and outcomes are not independent.
+
+
+```{r}
+hist(data4$X1st.Trophic.level, col = rgb(0,0,1,1/2), breaks = 5, xlim = c(0,160), main = "Histogram of the ", xlab = "Growth rate (% body weight/day)")
+
+hist(data4$Top.Predator, col = rgb(1,0,0,1/2), breaks = 5, xlim = c(0,160), main = "Combined Histogram of the effects ", xlab = "Growth rate (% body weight/day)")
+
+```
+This isn't really histogramable data...
+
+
+The type of test to that should be used is a chi-squared test because the data is categorical.
+
+
+```{r}
+chisq.test(data4)
+
+```
+
+Because the p-value is 2.2e-16 which is less that 0.05 we reject the null hypothesis.
+
+Therefore we conclude that the trophic level and outcomes are not independent.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
