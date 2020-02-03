@@ -1,4 +1,7 @@
 
+#For updating r version
+install.packages("installr"); library(installr) # install+load installr
+updateR() # updating R.
 
 
 #used for auto finding the best transformation to normalize the data

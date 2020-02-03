@@ -1,0 +1,168 @@
+---
+title: "Homework 3"
+author: "Johann Memmel"
+date: "February 2, 2020"
+output: html_document
+---
+#Homework 3
+##Part 1 - ANOVAs
+###Killarney
+1
+```{r}
+data1 = read.csv("Killarney.csv", fileEncoding="UTF-8-BOM")
+```
+2
+```{r}
+boxplot(data1$Diversity~data1$status, col = "cyan")
+```
+There may be a difference in plakton diversity between the acidic and neutral lakes.
+
+3
+```{r}
+data1ANOVA = aov(data1$Diversity~data1$status)
+summary(data1ANOVA)
+
+```
+4
+The null hypothesis is that the mean diversity is equal in all lake statuses.
+The alternative hypothesis is that the average diversity is not the same for all statuses.
+
+
+5
+The F value of 16.41 indicates that the variation between the sample means is greater than the variation within the samples. If the null hypothesis was correct we would expect a F-value of 1.
+Additionally because the p-value (5.43e-06) is less that 0.05 we conclude that the mean diversity of each lake status are not the same and reject the null hypothesis.
+
+6
+Yes
+
+7
+```{r}
+TukeyHSD(data1ANOVA)
+
+```
+8
+Based on the results of the tukey test both Neutral-Acidic and Recovered-Acidic showed signifiant differences as in dicated by there p-values being less than 0.05 (at 0.0000253 and 0.0004023 respectively).
+
+9
+The first assumption of an ANOVA is that the samples were taken in a random fashion which is not easily testable
+The second assumption is that the residuals are normally distributed. we test this by running a shapiro wilk test on the residuals
+```{r}
+shapiro.test(data1ANOVA$residuals)
+hist(data1ANOVA$residuals)
+```
+Since the p-value is 0.01415 which is less than 0.05 we reject the null hypothesis of the test that the residuals are normally distributed. This means the Killarney data set fails assumption 2.
+Assumption 3 is that all populations have a similar variance and is tested with levene's test.
+```{r}
+if (!require("car")) install.packages("car")
+leveneTest(data1$Diversity, data1$status)
+```
+The null hypothesis of this test is that the variances in each group are the same. The p-value is greater than 0.05 therefore we cannot reject the null hypothesis. Therefore our the killarney data does meet the 3rd ANOVA assumptions.
+
+
+###Esophageal cancer
+
+
+```{r}
+data2 = read.csv("esoph.csv", fileEncoding="UTF-8-BOM")
+```
+
+```{r}
+boxplot(data2$ncases~data2$Alcohol*data2$Tobacco)
+interaction.plot(data2$Alcohol,data2$Tobacco, data2$ncases, legend = T)
+```
+```{r}
+data2ANOVA = aov(data2$ncases~data2$Alcohol*data2$Tobacco)
+summary(data2ANOVA)
+```
+10
+The conclusion draw from the ANOVA table is that neither alcohol or tobacco or the two together play a significant role in the number of cases. This is due to that fact that all P values are greater than 0.05 meaning the null hypothesis cannot be rejected.
+
+
+11
+```{r}
+boxplot(data2$ncases~data2$Age*data2$Tobacco)
+interaction.plot(data2$Age,data2$Tobacco, data2$ncases, legend = T, col = c("cyan", "red", "blue", "pink"))
+
+
+data2ANOVA2 = aov(data2$ncases~data2$Age*data2$Tobacco)
+summary(data2ANOVA2)
+TukeyHSD(data2ANOVA2)
+
+```
+B. 
+The tukey test shows that many different age groups show significant diferences from each other (example; 45-54, 55-64 and 65-74 vs 25-34) . This is also seen within the tobacco use groups but with less comparisons being significant. Only 20-29g/day vs 0-9g/day and 30+g/day vs 0-9g/day were found to be significant. 
+
+Based on these results it appears that age and alcohol are significant as shown by their p-values of less than 0.05. The pair-wise comparason fails to reject the null hypothesis as its p-value is greater than 0.05.
+
+
+12
+```{r}
+boxplot(data2$ncases~data2$Age*data2$Alcohol)
+interaction.plot(data2$Age,data2$Alcohol, data2$ncases, legend = T, col = c("cyan", "red", "blue", "pink"))
+
+
+data2ANOVA3 = aov(data2$ncases~data2$Age*data2$Alcohol)
+summary(data2ANOVA3)
+#TukeyHSD(data2ANOVA3)
+```
+The conclusion that can be drawn based on this analysis is that age and alcohol together play a significant role in esophageal cancer rates. This is based on the combined factor in the ANOVA table having a p-value lower than 0.05 and due to the graph not being equal horizontal lines. We know that the two variables togeth have an interaction due to the fact that the lines of the interaction plot intersect each other. Additionally 
+
+
+##Part 2 - Regression and correlation
+13
+a)
+```{r}
+data("mtcars")
+plot(mtcars$wt, mtcars$mpg)
+abline(lm(mtcars$mpg~mtcars$wt), col = "blue")
+lm(mtcars$mpg~mtcars$wt)
+```
+Yes mileage seems to be connected to weight
+b)
+```{r}
+summary.lm(lm(mtcars$mpg~mtcars$wt))
+qf(0.95, df1 = 1, df2 = 30)
+```
+Since the observed F-score (91.38) is greater than the critical F-score (4.17) we reject the null hypothesis that the ration is equal to one
+c)
+The equation of the line is y= -5.3445x + 37.2851
+d)
+the p-value from the regression results is 1.294e-10
+
+14
+```{r}
+plot(mtcars$hp,mtcars$qsec)
+abline(lm(mtcars$qsec~mtcars$hp), col = "blue")
+
+```
+Yes it appears quarter mile time is related to horsepower.
+```{r}
+carQsecHP = lm(mtcars$qsec~mtcars$hp)
+summary.lm(lm(mtcars$qsec~mtcars$hp))
+-0.018458*(300)+20.556354
+qf(0.95, df1 = 1, df2 = 30)
+```
+The equation of the line is y=-0.015458x + 20.556354. A car with 300 horsepower based on our regression would have a quarter mile time of 15.02 seconds.
+
+Based on the f-statistic of 30.19 being larger than the critical f-statistic of 4.17 we can reject the null hypothesis that the ratio is equal to one.
+
+```{r}
+if (!require("gvlma")) install.packages("gvlma")
+library(gvlma)
+gvlma.lm(carQsecHP)
+
+```
+The data met most of the required assumptions except for the kurtosis test.
+
+
+15
+```{r}
+data("iris")
+plot(iris$Sepal.Length, iris$Petal.Length)
+summary(lm(iris$Petal.Length~iris$Sepal.Length))
+sqrt(0.76)
+
+```
+The correlation coefficient is 0.8717798. THis correlation is significant because the p-value it inherites from the linear regression is significant, 2.2e-16 being less that 0.05.
+
+
