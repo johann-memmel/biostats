@@ -70,11 +70,12 @@ data2 = read.csv("esoph.csv", fileEncoding="UTF-8-BOM")
 boxplot(data2$ncases~data2$Alcohol*data2$Tobacco)
 interaction.plot(data2$Alcohol,data2$Tobacco, data2$ncases, legend = T)
 ```
+10
 ```{r}
 data2ANOVA = aov(data2$ncases~data2$Alcohol*data2$Tobacco)
 summary(data2ANOVA)
 ```
-10
+
 The conclusion draw from the ANOVA table is that neither alcohol or tobacco or the two together play a significant role in the number of cases. This is due to that fact that all P values are greater than 0.05 meaning the null hypothesis cannot be rejected.
 
 
@@ -91,7 +92,7 @@ TukeyHSD(data2ANOVA2)
 ```
 B. 
 The tukey test shows that many different age groups show significant diferences from each other (example; 45-54, 55-64 and 65-74 vs 25-34) . This is also seen within the tobacco use groups but with less comparisons being significant. Only 20-29g/day vs 0-9g/day and 30+g/day vs 0-9g/day were found to be significant. 
-
+C
 Based on these results it appears that age and alcohol are significant as shown by their p-values of less than 0.05. The pair-wise comparason fails to reject the null hypothesis as its p-value is greater than 0.05.
 
 
@@ -142,9 +143,10 @@ summary.lm(lm(mtcars$qsec~mtcars$hp))
 -0.018458*(300)+20.556354
 qf(0.95, df1 = 1, df2 = 30)
 ```
-The equation of the line is y=-0.015458x + 20.556354. A car with 300 horsepower based on our regression would have a quarter mile time of 15.02 seconds.
+The equation of the line is y=-0.015458x + 20.556354. 
+A car with 300 horsepower based on our regression would have a quarter mile time of 15.02 seconds.
 
-Based on the f-statistic of 30.19 being larger than the critical f-statistic of 4.17 we can reject the null hypothesis that the ratio is equal to one.
+Based on the f-statistic of 30.19 being larger than the critical f-statistic of 4.17 we can reject the null hypothesis that the ratio is equal to one. The p-value of the regression is 5.766e-06 which is less than 0.05.
 
 ```{r}
 if (!require("gvlma")) install.packages("gvlma")
