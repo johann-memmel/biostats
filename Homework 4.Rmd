@@ -1,0 +1,213 @@
+---
+title: "Homework 4"
+author: "Johann Memmel"
+date: "February 25, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+if (!require("vcd")) install.packages("vcd")
+library(vcd, e1071)
+if (!require("popbio")) install.packages("popbio")
+library(popbio)
+if (!require("bestglm")) install.packages("bestglm")
+library(bestglm)
+if (!require("effects")) install.packages("effects")
+library(effects)
+if (!require("lmtest")) install.packages("lmtest")
+library(lmtest)
+if (!require("car")) install.packages("car")
+library(car)
+if (!require("caret")) install.packages("caret")
+library(caret)
+if (!require("e1071")) install.packages("e1071")
+library(e1071)
+
+```
+
+
+
+#Homework 4
+##Q2
+  I suspect gender, age, class, Country of residence, and ticket price may all play a role in survivorship. Gender and age should play a role due to the 'women and children first' system used during the evacuation. Class should play a role as the wealthy may have been given priority and they were located on the upper decks. Country of residence maybe play a role due to how poor people would not have been able to travel to get to the titanic meaning that most 3rd class passangers would have been from the areas the titanic docked. Ticket price might play a role due to how different classes cost different amounts and the role that increased wealth may have on priority.
+
+
+##Q3
+```{r}
+titanicData = read.csv("titanic.csv", fileEncoding="UTF-8-BOM")
+#gender
+mosaic(survived~Gender, data=titanicData)
+
+
+#age
+titanicDataNona<-na.omit(data.frame("age"=titanicData$age,"survived"=titanicData$survived))
+logi.hist.plot(titanicDataNona$age, titanicDataNona$survived, boxp=FALSE, type="hist",col="gray", xlabel="Age")
+
+
+#class
+mosaic(survived~pclass, data=titanicData)
+
+#Residence country
+mosaic(survived~Residence, data=titanicData)
+
+#ticket price
+titanicDataNona<-na.omit(data.frame("fare"=titanicData$fare,"survived"=titanicData$survived))
+logi.hist.plot(titanicDataNona$fare, titanicDataNona$survived, boxp=FALSE, type="hist",col="gray", xlabel="Ticket price")
+
+
+```
+
+##4
+```{r}
+my.variables=data.frame("Gender"=titanicData$Gender,"Age"=titanicData$age,"pclass"=titanicData$pclass,"Residence"=titanicData$Residence,"fare"=titanicData$fare,"survival"=titanicData$survived)
+my.variables.nona=na.omit(my.variables)  #get rid of observations with NA
+bestglm(my.variables.nona,IC="AIC",family=binomial) #response variable must be last column in dataframe
+
+
+
+
+```
+
+
+##5
+```{r}
+model1<-glm(survival~Gender+Age+pclass+Residence, data=my.variables.nona)
+summary(model1)
+
+```
+
+##6
+```{r}
+univariate.Gender=glm(survival~Gender, data=my.variables.nona, family=binomial(link="logit"))
+summary(univariate.Gender)
+
+univariate.Age=glm(survival~Age, data=my.variables.nona, family=binomial(link="logit"))
+summary(univariate.Age)
+
+
+univariate.pclass=glm(survival~pclass, data=my.variables.nona, family=binomial(link="logit"))
+summary(univariate.pclass)
+
+
+univariate.Residence=glm(survival~Residence, data=my.variables.nona, family=binomial(link="logit"))
+summary(univariate.Residence)
+
+
+univariate.fare=glm(survival~fare, data=my.variables.nona, family=binomial(link="logit"))
+summary(univariate.fare)
+```
+
+
+```{r}
+model2<-glm(survival~Gender+Age+pclass+Residence+fare, data=my.variables.nona)
+summary(model2)
+
+```
+
+trying without age to make simpliler model
+
+```{r}
+model3<-glm(survival~Gender+pclass+Residence + fare, data=my.variables.nona)
+summary(model3)
+
+```
+
+```{r}
+lrtest(model1,model2,model3)
+```
+##7
+Purposeful selection did produce a model that was different from automatic selection but had a high AIC. I could not produce a selected model that beat the automatic one.
+
+
+##8
+```{r}
+
+plot(allEffects(model1))
+
+plot(allEffects(model2))
+
+plot(allEffects(model3))
+
+```
+The variables were mostly in the direction I expected except for the residence variable. I had expected that people not from the US or UK would be more likely to survive due to being wealthier based on the ability to get to the UK to depart on board.
+
+##9
+```{r}
+#note you are looking to make sure there is a linear relationship (fitted green line) and to examine plots to 
+#see if there are any differences in the variability of residuals as the value for each predictor variable increases.
+residualPlots(model1)
+
+#check for studentized residuals with a Bonferonni p<0.05
+outlierTest(model1)
+
+#Test for leverage. Look at hat values plot that indicate leverage
+#Note that id.n=3 means that it will pick out the three values furthest from the average
+influenceIndexPlot(model1, id.n=5)
+
+#test for influential observations. If removal of an observation causes substantial change in the estimates of coefficient, it is called influential observation. Influence can be thought of as the product of 
+#leverage and outlier (e.g., it has high hat value and response value is unusual conditional on covariate pattern)
+influencePlot(model1)
+
+#Examine relationship between predictors. Is there any multicollinearity?
+#The general rule of thumb is that VIFs exceeding 4 warrant further investigation, while VIFs exceeding 10 
+#are signs of serious multicollinearity requiring correction.
+vif(model1)
+
+print(model1)
+```
+
+##10
+There were some results of concern highlighted in the diagnostics. This would normally indicate errors or outliers in that data to be double checked. Point 25 was one of these outliers of a 1st class woman who had died.
+Additionally the linear predictor of the model(residualPlots) resulted in an odd non-linear line. This is due to the fact that the response variable is binary.
+
+##11
+```{r}
+#Test ability of model to accurate classify birthweigth into low/high
+#k-fold cross validation 
+
+ctrl <- trainControl(method = "repeatedcv", number = 10,savePredictions = TRUE, repeats = 5)
+my.variables.nona$survival=as.factor(my.variables.nona$survival)
+train1= train(survival~Gender+Age+pclass+Residence,data=my.variables.nona, method="glm", family=binomial(link='logit'), trControl = ctrl, tuneLength = 5)
+print(train1)
+#summary(train1)
+```
+##Q12
+The model was overall pretty good as predicting survival with an accuracy of 0.788 and a Kappa of 0.556. 
+
+
+##Q13
+```{r}
+###Question 13###
+predictions<-predict(model1, newdata=my.variables.nona, type="response")
+confusionMatrix(data=as.factor(as.numeric(predictions>0.5)),reference=my.variables.nona$survival)
+
+
+
+
+#This part literally randomly generates a data set IDK why its relavent here
+train <- data.frame(LoanStatus_B = as.numeric(rnorm(100)>0.5), b= rnorm(100), c = rnorm(100), d = rnorm(100))
+logitMod <- glm(LoanStatus_B ~ ., data=train, family=binomial(link="logit"))
+pdata <- predict(logitMod, newdata = train, type = "response")
+
+# use caret and compute a confusion matrix
+confusionMatrix(data=as.factor(as.numeric(pdata>0.5)), reference = as.factor(train$LoanStatus_B))
+```
+##13
+The confusion matrix found an accuracy of 0.7856 and a kappa of 0.5503.
+
+##14
+There is a difference between the k-fold cross validation and confusion matrix because they use different methods of calculating accuracy. The confusion matrix looks at number of false positives and negatives in order to discover what kinds of errors are occuring and to calculate accuracy. This results in a more realistic idea of what the accuracy is while k-fold might be overly optimistic.
+
+
+
+
+
+
+
+
+

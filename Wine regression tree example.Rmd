@@ -1,0 +1,110 @@
+---
+title: "Regression tree example"
+author: "Gray"
+date: "February 20, 2018"
+output: word_document
+---
+Note: this example was modified from https://rpubs.com/mammykins/reg_tree_wine
+
+First, let's load the libraries we need, set our working directory, and read in our dataset
+```{r setup, include=T}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+setwd("C:/Users/dgray/OneDrive - Wilfrid Laurier University/Grad stats/Winter 2018/Homework")
+
+mydata=read.csv("winequality-red.csv",sep=";")
+
+```
+
+
+Next, let's look at our dataset. The wines were subject to lab analysis and then rated in a blind tasting by panels of no less than three judges on a quality scale ranging from zero (gross) to 10 (excellent). If judges disagreed the median values was used. Thus we intend to model the numeric response variable quality by the eleven other explanatory variables. Compared to other machine learning models, trees do not need as much data preprocessing, thus we can just get on with it! However, it is important to consider the type of variation in the respone variable, checking for extremes and outliers can also be prudent at this stage.
+```{r }
+#Summary of dataset
+summary(mydata)
+```
+
+In analyses where you hope to use a model for prediction, it often helps to split the dataset into a training dataset and a testing dataset. The training dataset is used to build your model. Once you have a complete model, you can test how well it can  predict values for a set of data the model hasn't seen before. In this example, we will create a training dataset with 75% of the data from mydata. The remaining 25% will be used later to test our model.
+```{r }
+#create a training dataset
+set.seed(1337)
+train<-sample(x = nrow(mydata), size = 1199, replace = FALSE)
+train.data <- mydata[sample(x = nrow(mydata), size = 1199, replace = FALSE),] 
+```
+
+Let's build our regression tree. In this case,  we want to build a model that can predict wine quality. This method "identifies optimum break points within predictor variables, separating them in  groups inside which the values of the dependent variable are as homogeneous as possible. At the first step, the method selects the predictor on the basis of which the dependent variable may be best separated into two groups and identifies the optimum break point. Each of the two resulting groups are further separated into two  sub-groups  on the basis of another (or the same) predictor. Following this logic, the method generates a tree-like structure by means of which the dependent variable is optimum divided into a  number of  groups, characterized  by  maximum  internal homogeneity  and maximum external differentiation. Using a regression tree has important advantages compared to classical linear  regression: predictor  -  response relationship can be non-linear; it is a non-parametric  method; it  may  easily  integrate qualitative variables both as  predictors and dependent variables." 
+
+Comparing Linear Regression and Regression Trees ... (PDF Download Available). Available from: https://www.researchgate.net/publication/233831412_Comparing_Linear_Regression_and_Regression_Trees [accessed Feb 20 2018].
+```{r}
+#Building regression tree with training set
+m.rpart <- rpart(quality ~ ., data = train.data) 
+
+#summary of tree
+summary(m.rpart)
+```
+
+
+Let's plot our tree
+```{r}
+rpart.plot(m.rpart, digits = 3, fallen.leaves = TRUE,tweak=1.3)
+```
+
+Now let's use the model to predict wine quality in an untested sample (our test dataset). The predict function will use the predictor variables in our test dataset to predict the wine quality. 
+
+```{r}
+p.rpart <- predict(m.rpart, mydata[-train, ])  # note the negative, drops train leaving test
+```
+
+Next, let's see how our predicted wine quality correlated with the real wine quality. The cor function will spit out r, the correlation coefficient
+
+```{r}
+cor(p.rpart, mydata[-train, ][["quality"]],method="pearson")
+```
+
+Now let's calculate the mean absolute error, which will tell us how far on average our predictions were from the actual values
+
+```{r}
+MAE <- function(actual, predicted)  {
+  mean(abs(actual - predicted))
+}
+
+MAE(predicted = p.rpart,actual = mydata[-train, ][["quality"]])
+```
+
+How good would a random guess be?
+```{r}
+#this removes the training data, so that you are left with the testing dataset
+wine.qualities.test=mydata[-train, ][["quality"]]
+
+#Let's save the actual wine qualities from the test dataset into a vector called actual
+actual=wine.qualities.test
+
+#Here is a custom function that uses two variables, data and indices. The data will be the wine
+#qualities from the test dataset. The indices will be randomly selected when using the boot function
+#below. In essence, the boot function will randomly shuffle the wine quality data and then test 
+#against actual wine quality assignment. The MAE2 function will calculate the mean absolute error
+#each time the data is shuffled.
+MAE2 <- function(data,indices)  {
+  d<-data[indices]
+  return(mean(abs(actual - d)))
+}
+
+#Here we use the boot function to make our random "guesses." It will shuffle the wine quality 
+#data and calculate the mean absolute error using our MAE2 function. The R=1000 means it will
+#do this 1000 times. 
+library(boot)
+guesses=boot(data=wine.qualities.test, statistic=MAE2, R=1000)
+
+#Now, let's plot a histogram of mean absolute differences from the bootstrap and add a red
+#line for the mean
+{hist(guesses$t)
+abline(v=mean(guesses$t),col="red")}
+mean(guesses$t)
+
+#Is our assignment with our model significantly different from that expected by chance?
+p.value=length(which((guesses$t<0.5198)==T))/1000
+p.value
+```
+

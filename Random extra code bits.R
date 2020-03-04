@@ -11,7 +11,7 @@ install.packages("bestNormalize")
 install.packages("gvlma")
 library(gvlma)
 
-
+library(boot)
 library(MASS)
 data("UScereal")
 UScereal
@@ -55,4 +55,56 @@ head(bootTest$t)
 plot(bootTest, index = 1)
 
 boot.ci(bootTest, index=1)
+
+
+data("iris")
+Beavers = read.csv("Beavers.csv", fileEncoding="UTF-8-BOM")
+
+install.packages("bootstrap")
+library(bootstrap)
+
+#jackknife stuff
+hist(Beavers$temp)
+theta <- function(x){mean(x)}
+result = jackknife(Beavers$temp, theta)
+abline(v = (mean(result$jack.values)), col = "Red")
+abline(v = (mean(result$jack.values) + 1.96* result$jack.se), col = "blue")
+abline(v = (mean(result$jack.values) - 1.96 * result$jack.se), col = "blue")
+result
+
+
+
+xdata = null
+xdata = cbind(xdata, Beavers$)
+xdata = cbind(xdata, Beavers$)
+xdata <- matrix(rnorm(30),ncol=2)
+n <- length(Beavers$temp)
+theta <- function(x,xdata){ cor(xdata[x,1],xdata[x,2]) }
+results <- jackknife(1:n,theta,xdata)
+
+
+
+
+#Bootstrap stuff
+theta <- function(x){mean(x)}
+result2 = bootstrap(iris$Sepal.Length, 10000, theta)
+hist(result2$thetastar)
+abline(v = mean(iris$Sepal.Length))
+abline(v= mean(result2$thetastar), col = "red")
+
+
+if (!require("coin")) install.packages("coin")
+library(coin)
+
+dataPermutation = read.csv("KillarneyMod.csv", fileEncoding="UTF-8-BOM")
+
+plot(Diversity ~ status, data = dataPermutation)
+
+independence_test(Diversity ~ status, data = dataPermutation)
+
+
+symmetry_test(Diversity ~ status | Lake, data = dataPermutation)
+
+independence_test(temp ~ activ, data = Beavers)
+data("catsM")
 
