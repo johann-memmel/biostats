@@ -1,0 +1,74 @@
+---
+title: "Presentation"
+author: "Johann Memmel"
+date: "February 10, 2020"
+output: html_document
+---
+
+
+
+
+```{r}
+Beavers = read.csv("Beavers.csv", fileEncoding="UTF-8-BOM")
+if (!require("bootstrap")) install.packages("bootstrap")
+library(bootstrap)
+```
+
+```{r}
+hist(Beavers$temp)
+theta <- function(x){mean(x)}
+result = jackknife(Beavers$temp, theta)
+abline(v = (mean(result$jack.values)), col = "Red")
+JKperc975 = mean(result$jack.values) + 1.96* result$jack.se
+JKperc025 = mean(result$jack.values) - 1.96 * result$jack.se
+
+abline(v = JKperc975, col = "blue")
+abline(v = JKperc025, col = "blue")
+result
+JKperc975
+JKperc025
+
+```
+
+
+```{r}
+xdata = NULL
+xdata <- cbind(xdata, catsM$Bwt)
+xdata <- cbind(xdata, catsM$Hwt)
+n <- length(catsM$Bwt)
+theta <- function(x,xdata){ cor(xdata[x,1],xdata[x,2]) }
+results <- jackknife(1:n,theta,xdata)
+
+
+JKsperc975 = mean(results$jack.values) + 1.96 * results$jack.se
+JKsperc025 = mean(results$jack.values) - 1.96 * results$jack.se
+
+
+mean(results$jack.values)
+JKsperc975
+JKsperc025
+```
+
+
+
+
+```{r}
+if (!require("coin")) install.packages("coin")
+library(coin)
+```
+
+```{r}
+plot(temp ~ activ, data = Beavers)
+boxplot(temp ~ activ, data = Beavers)
+independence_test(temp ~ activ, data = Beavers)
+#p-value of <0.05 therefore we reject that these are independent
+```
+
+
+
+
+
+
+
+
+

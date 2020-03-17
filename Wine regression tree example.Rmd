@@ -13,7 +13,7 @@ install.packages("rpart.plot")
 library(rpart)
 library(rpart.plot)
 
-setwd("C:/Users/dgray/OneDrive - Wilfrid Laurier University/Grad stats/Winter 2018/Homework")
+
 
 mydata=read.csv("winequality-red.csv",sep=";")
 

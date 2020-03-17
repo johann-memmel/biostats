@@ -1,0 +1,120 @@
+---
+title: "Homework 5"
+author: "Johann Memmel"
+date: "March 14, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("rpart")) install.packages("rpart")
+library(rpart)
+if (!require("rpart.plot")) install.packages("rpart.plot")
+library(rpart.plot)
+if (!require("boot")) install.packages("boot")
+library(boot)
+
+```
+
+#Homework 5
+
+```{r}
+crimedata=read.csv("crimedata.csv", fileEncoding="UTF-8-BOM")
+crimedata10=read.csv("crimedata10.csv", fileEncoding="UTF-8-BOM")
+```
+
+```{r }
+#Summary of dataset
+summary(crimedata)
+```
+
+
+##2&3
+```{r}
+#Building regression tree with training set
+
+#all predictors
+#crime.m.rpart <- rpart(CrimeRate ~ ., data = crimedata) 
+
+crime.m.rpart <- rpart(CrimeRate ~ ExpenditureYear+StateSize+BelowWage+Youth+Education+Wage, data = crimedata) 
+
+
+#summary of tree
+summary(crime.m.rpart)
+```
+The most important variables found were ExpenditureYear(24), Youth(19), Wage(19), BelowWage(16), StateSize(14), and Education(8).
+
+##4
+```{r}
+rpart.plot(crime.m.rpart, digits = 3, fallen.leaves = TRUE,tweak=1.1, box.palette = "Reds")
+```
+The diagram is showing that crime is higher in states that spend less than 77$(?) per capita then breaks that down further by number of young males, with over 131 youth leading to the highest crime rates in the model.
+
+##5
+From right to left (lowest to highest): 72.5, 97.6, 105, and 133.
+
+##6
+
+
+
+##7
+```{r}
+crime.p.rpart <- predict(crime.m.rpart, crimedata10)
+```
+##8
+```{r}
+cor(crime.p.rpart, crimedata10[["CrimeRate"]],method="pearson")
+```
+##9
+```{r}
+MAE <- function(actual, predicted)  {
+  mean(abs(actual - predicted))
+}
+
+MAE(predicted = crime.p.rpart,actual = crimedata10[["CrimeRate"]])
+```
+
+##10
+```{r}
+#this removes the training data, so that you are left with the testing dataset
+Crime10.CrimeRate.test=crimedata10[["CrimeRate"]]
+
+#Let's save the actual wine qualities from the test dataset into a vector called actual
+actual=Crime10.CrimeRate.test
+
+#Here is a custom function that uses two variables, data and indices. The data will be the wine
+#qualities from the test dataset. The indices will be randomly selected when using the boot function
+#below. In essence, the boot function will randomly shuffle the wine quality data and then test 
+#against actual wine quality assignment. The MAE2 function will calculate the mean absolute error
+#each time the data is shuffled.
+MAE2 <- function(data,indices)  {
+  d<-data[indices]
+  return(mean(abs(actual - d)))
+}
+
+#Here we use the boot function to make our random "guesses." It will shuffle the wine quality 
+#data and calculate the mean absolute error using our MAE2 function. The R=1000 means it will
+#do this 1000 times. 
+guesses=boot(data=Crime10.CrimeRate.test, statistic=MAE2, R=1000)
+
+#Now, let's plot a histogram of mean absolute differences from the bootstrap and add a red
+#line for the mean
+{hist(guesses$t)
+abline(v=mean(guesses$t),col="red")}
+mean(guesses$t)
+
+#Is our assignment with our model significantly different from that expected by chance?
+p.value=length(which((guesses$t<0.5198)==T))/1000
+p.value
+```
+##11
+
+##12
+
+
+
+
+
+
+
+
