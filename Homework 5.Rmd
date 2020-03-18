@@ -119,6 +119,7 @@ The MAE from randomly assigned crime rates is worse then from our model (44.5 > 
 
 ##12
 I don't understand what your p-value code here does.
+
 To test if the MAE from the model is different then by random chance I did a one sample t-test comparing the distribution of the random guesses to a mean of 24.32924 (the MAE of our model). This results in a p-value of <2.2e-16. indicating that the mean of the MAE of the random guesses is significantly different then the MAE of our model.
 This is confirmed by looking at the histogram and observing that 24.32924 would be far outside the expected results. Also backing this is the 95% confidence interval produced by the t-test showing that 24.32924 would be far outside the 95% confidence interval.
 
