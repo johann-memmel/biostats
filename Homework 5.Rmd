@@ -36,7 +36,11 @@ summary(crimedata)
 #all predictors
 #crime.m.rpart <- rpart(CrimeRate ~ ., data = crimedata) 
 
-crime.m.rpart <- rpart(CrimeRate ~ ExpenditureYear+StateSize+BelowWage+Youth+Education+Wage, data = crimedata) 
+
+crime.m.rpart <- rpart(CrimeRate ~ ExpenditureYear+StateSize+BelowWage+Youth+Education+Wage, data = crimedata)
+
+#alt model
+#crime.m.rpart <- rpart(CrimeRate ~ ExpenditureYear+StateSize+BelowWage+Youth+Education+Wage, data = crimedata, minbucket = 5, minsplit = 10) 
 
 
 #summary of tree
@@ -54,7 +58,7 @@ The diagram is showing that crime is higher in states that spend less than 77$(?
 From right to left (lowest to highest): 72.5, 97.6, 105, and 133.
 
 ##6
-
+Wage, BelowWage and education were all excluded. This was done because rpart tries to balance the improvement gained by doing additional splits with the cost of the split. If an additional split does not decrease the overall lack of fit by the complexity parameter then the split is not done. You can change the tree formed by adding additional constraints like "minsplit" which changes the minimium number of observations for a split to be attempted.
 
 
 ##7
@@ -65,6 +69,7 @@ crime.p.rpart <- predict(crime.m.rpart, crimedata10)
 ```{r}
 cor(crime.p.rpart, crimedata10[["CrimeRate"]],method="pearson")
 ```
+The correlation coefficent is 0.6175.
 ##9
 ```{r}
 MAE <- function(actual, predicted)  {
@@ -73,7 +78,7 @@ MAE <- function(actual, predicted)  {
 
 MAE(predicted = crime.p.rpart,actual = crimedata10[["CrimeRate"]])
 ```
-
+It was okay at making predictions. Only being able to predict if a state was in the upper or lower half really. For a state roughly in the middle of the pack, 100, this model is on average off by ~25% thats enought for it to end up on either the high end or the low end of the spectrum.
 ##10
 ```{r}
 #this removes the training data, so that you are left with the testing dataset
@@ -94,7 +99,7 @@ MAE2 <- function(data,indices)  {
 
 #Here we use the boot function to make our random "guesses." It will shuffle the wine quality 
 #data and calculate the mean absolute error using our MAE2 function. The R=1000 means it will
-#do this 1000 times. 
+#do this 1000 times.
 guesses=boot(data=Crime10.CrimeRate.test, statistic=MAE2, R=1000)
 
 #Now, let's plot a histogram of mean absolute differences from the bootstrap and add a red
@@ -106,12 +111,16 @@ mean(guesses$t)
 #Is our assignment with our model significantly different from that expected by chance?
 p.value=length(which((guesses$t<0.5198)==T))/1000
 p.value
+t.test(guesses$t, mu=24.32924)
 ```
 ##11
+The MAE from randomly assigned crime rates is worse then from our model (44.5 > 24.3). A lower mean average error indicates the predicted values are closer to reality in the model than when randomly assigned. 
+
 
 ##12
-
-
+I don't understand what your p-value code here does.
+To test if the MAE from the model is different then by random chance I did a one sample t-test comparing the distribution of the random guesses to a mean of 24.32924 (the MAE of our model). This results in a p-value of <2.2e-16. indicating that the mean of the MAE of the random guesses is significantly different then the MAE of our model.
+This is confirmed by looking at the histogram and observing that 24.32924 would be far outside the expected results. Also backing this is the 95% confidence interval produced by the t-test showing that 24.32924 would be far outside the 95% confidence interval.
 
 
 

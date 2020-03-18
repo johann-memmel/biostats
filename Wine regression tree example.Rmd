@@ -9,7 +9,7 @@ Note: this example was modified from https://rpubs.com/mammykins/reg_tree_wine
 First, let's load the libraries we need, set our working directory, and read in our dataset
 ```{r setup, include=T}
 knitr::opts_chunk$set(echo = TRUE)
-install.packages("rpart.plot")
+#install.packages("rpart.plot")
 library(rpart)
 library(rpart.plot)
 
