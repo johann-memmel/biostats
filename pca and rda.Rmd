@@ -76,7 +76,7 @@ names(z)
 
 #Are any of the lakes outliers? Values above the score distance and orthogonal distance should be checked 
 fit2<-princomp(z)
-pcaDiagplot(z,fit2,a=4)
+pcaDiagplot(z,fit2, a = 4)
 ```
 
 
