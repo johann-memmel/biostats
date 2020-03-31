@@ -1,0 +1,150 @@
+---
+title: "Final Project"
+author: "Johann Memmel"
+date: "27/03/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+DataControl=read.csv("NaNO3 data control.csv", fileEncoding="UTF-8-BOM")
+Data.0.16=read.csv("NaNO3 data 0.16.csv", fileEncoding="UTF-8-BOM")
+Data.0.59=read.csv("NaNO3 data 0.59.csv", fileEncoding="UTF-8-BOM")
+Data.6.6=read.csv("NaNO3 data 6.6.csv", fileEncoding="UTF-8-BOM")
+DataMerged=read.csv("NaNO3 data merged.csv", fileEncoding="UTF-8-BOM")
+DataAvg=read.csv("NaNO3 data merged avg.csv", fileEncoding="UTF-8-BOM")
+
+AcuteData=read.csv("48hr acute Sodium Nitrate test.csv", fileEncoding="UTF-8-BOM")
+```
+
+
+
+
+```{r}
+plot(DataMerged)
+
+DataMerged$Concentration
+
+levels(DataMerged$Concentration) <- c("0.00", "0.16", "0.59", "6.60")
+levels(DataMerged$Replicate) <- c(1:10)
+
+DataMerged$Concentration<-factor(DataMerged$Concentration)
+DataMerged$Replicate <- factor(DataMerged$Replicate)
+
+summary(DataMerged)
+
+plot(DataMerged)
+
+DataMerged[which(DataMerged$Concentration=='0.16'),]
+
+
+boxplot(DataMerged$X.Neonates~DataMerged$Day.of.Exposure*DataMerged$Concentration)
+
+plot(DataMerged[which(DataMerged$Concentration=='0.16'),]$X..Alive~DataMerged[which(DataMerged$Concentration=='0.16'),]$Day.of.Exposure)
+
+boxplot(DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$X..Alive~DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$Concentration)
+
+
+plot(DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$X..Alive)
+
+plot(mean(DataMerged[which(DataMerged$Concentration=='0.16'),]$X..Alive))
+
+hist(DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$X..Alive)
+
+
+
+
+logi.hist.plot(DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$Concentration, DataMerged[which(DataMerged$Day.of.Exposure=='21'),]$X..Alive, boxp=FALSE, type="hist",col="gray")
+
+
+
+mean(DataMerged[])
+
+
+boxplot(DataMerged[]$X..Alive, DataMerged[0]$Day.of.Exposure)
+
+
+anova.result = aov(DataMerged$X..Alive~*, data=DataMerged)
+summary(anova.result)
+TukeyHSD(anova.result)
+
+plot(DataAvg$Concentration,DataAvg$X..mortality)
+
+hist(DataAvg[which(DataAvg$Concentration=='0.16'),]$X..mortality)
+
+
+plot(DataAvg[which(DataAvg$Concentration=='6.6'),]$X..mortality~DataAvg[which(DataAvg$Concentration=='6.6'),]$Day.of.Exposure, col = 1, type="line", xlab= "Day", ylab = "% mortality")
+lines(DataAvg[which(DataAvg$Concentration=='0.59'),]$X..mortality~DataAvg[which(DataAvg$Concentration=='0.59'),]$Day.of.Exposure, col = 2)
+lines(DataAvg[which(DataAvg$Concentration=='0.16'),]$X..mortality~DataAvg[which(DataAvg$Concentration=='0.16'),]$Day.of.Exposure, col = 3)
+lines(DataAvg[which(DataAvg$Concentration=='0'),]$X..mortality~DataAvg[which(DataAvg$Concentration=='0'),]$Day.of.Exposure, col = 4)
+
+
+
+boxplot(DataAvg$X..mortality~DataAvg$Concentration)
+```
+
+
+
+```{r}
+plot(AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile~AcuteData[which(AcuteData$Time=='48'),]$Conc)
+plot(AcuteData$Organisms.Immobile~AcuteData$Conc)
+
+boxplot(AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile~AcuteData[which(AcuteData$Time=='48'),]$Conc)
+testAnova = aov(AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile~as.factor(AcuteData[which(AcuteData$Time=='48'),]$Conc))
+summary(testAnova)
+
+```
+```{r}
+TukeyHSD(testAnova)
+
+
+install.packages("DunnettTests")
+library(DunnettTests)
+install.packages("PMCMRplus")
+library(PMCMRplus)
+qvSDDT(testAnova)
+```
+```{r}
+#AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile~as.factor(AcuteData[which(AcuteData$Time=='48'),]$Conc)
+
+x <- AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile
+g <- as.factor(AcuteData[which(AcuteData$Time=='48'),]$Conc)
+
+
+fit <- aov(x ~ g - 1)
+summary.aov(fit)
+shapiro.test(residuals(fit))
+bartlett.test(x ~ g)
+anova(fit)
+TukeyHSD(fit)
+summary(dunnettTest(x, g, alternative = "greater"))
+
+```
+8
+Based on the results of the tukey test both Neutral-Acidic and Recovered-Acidic showed signifiant differences as in dicated by there p-values being less than 0.05 (at 0.0000253 and 0.0004023 respectively).
+
+9
+The first assumption of an ANOVA is that the samples were taken in a random fashion which is not easily testable
+The second assumption is that the residuals are normally distributed. we test this by running a shapiro wilk test on the residuals
+```{r}
+shapiro.test(testAnova$residuals)
+hist(testAnova$residuals)
+qqPlot(testAnova$residuals)
+```
+Since the p-value is 0.01415 which is less than 0.05 we reject the null hypothesis of the test that the residuals are normally distributed. This means the Killarney data set fails assumption 2.
+Assumption 3 is that all populations have a similar variance and is tested with levene's test.
+```{r}
+if (!require("car")) install.packages("car")
+leveneTest(AcuteData[which(AcuteData$Time=='48'),]$Organisms.Immobile,AcuteData[which(AcuteData$Time=='48'),]$Conc)
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,214 @@
+---
+title: "PCA and RDA"
+author: "Gray"
+date: "March 8, 2018"
+output: word_document
+---
+
+Be sure to run this to install factoextra and load your libraries. You need to have the devtools library installed before installing factoextra
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(devtools)
+install_github("kassambara/factoextra")
+library(factoextra)
+library(vegan)
+library(chemometrics)
+library(ggplot2)
+library(cluster)
+```
+
+Read data into R. Don't forget to set your working directory!
+```{r}
+#setwd("C:/Users/dgray/OneDrive - Wilfrid Laurier University/Grad stats/Homework/")
+predictors=read.csv("killarney_physchem.csv")
+species=read.csv("killarney_pca.csv",stringsAsFactors=F)
+lake.status=read.csv("lakestatus.csv")
+```
+
+Prepare data for PCA. To do a PCA we need a dataframe with numeric values only. Since the first column contains lake names, we will get rid of that and move those lake names to become the row names. Rare species can have a large (misleading) impact on PCA. The code will also remove species who aren't present at more than 9 sites (20% of the 45 sites). Here we also abbreviate the column names so that they aren't long species names that will be difficult to read in subsequent plots. Finally, we perform the Hellinger transformation on the species abundance data. This transformation gives a low weight to species with low counts and many zeroes, improving the PCA results.
+```{r}
+#make the row names of your species data frame the lake names
+row.names(species)=species[,1]; species[,1]<-NULL
+
+#remove rare taxa (<20% of sites)
+#therefore, species must be present at >9 sites
+my.fun<-function(x) {sum(x==0)}
+species<-species[,which(as.numeric(apply(species,FUN=my.fun,MARGIN=2))<36)] 
+
+#let's abbreviate the long column names
+names(species) <- abbreviate(names(species), minlength=6)
+
+#perform a hellinger transformation on species data
+z<-decostand(species,"hell", na.rm=TRUE)
+```
+
+
+There are many functions to run a PCA in R. Here we use prcomp. Here we run the PCA and plot the result using the fviz_pca_biplot function
+```{r}
+#perform pca
+fit <- prcomp(z)
+
+#make a biplot. Note that the habbilage argument allows you to specify groups, in this case
+#it will be acidic, recovered, and neutral
+fviz_pca_biplot(fit,habillage=lake.status$Status)
+```
+
+Let's examine a summary of our PCA output to see how much variation is explained by each of the principle components. For each component, look under the "Proportion of variance" row. 
+```{r}
+summary(fit)
+```
+
+
+
+
+In the following chunk, we run some diagnostics for the PCA. Most of the time, we only interpret the first two principle components (the two axes that are plotted). However, there are times when we might want to investigate additional axes, and even use the components in other analyses such as principle components regression. Below we use the pcaCV and screeplot functions to examine how many components are worth keeping. We might also want to know how well our PCA explains variance in each variable (pcaVarExpl function) or identify outliers in our lake dataset that might require further inspection (pcaDiagplot function).
+```{r}
+#How many components to keep?
+pcaCV(z,9,center=T, scale=T)
+
+#How many components to keep? This is a different method
+screeplot(fit)
+
+#explained variance for each variable. Use names(z) to see all species names
+#a is number of components
+pcaVarexpl(X=z, a=2)
+names(z)
+
+#Are any of the lakes outliers? Values above the score distance and orthogonal distance should be checked 
+fit2<-princomp(z)
+pcaDiagplot(z,fit2,a=4)
+```
+
+
+Now let's run an RDA that will try to explain variation in the relative abundance of zooplankton at each site based on physical and chemical variables
+
+First, let's read in the predictors and standardize them. Standardizing predictors is important for an RDA, as different predictors are measured on different scales (e.g. pH versus conductivity). If one predictor has large values and another always has small values, due to the scale of measurement, then the predictor with large values may have more influence in the model. To counter this, we standardize the predictors by making them all have a mean of 0 and a variance of 1. 
+```{r}
+#read in physical/chemical  data
+physchem=read.csv("killarney_physchem.csv")
+
+#make the row names of your physchem data frame the lake names
+row.names(physchem)=physchem[,1]; physchem[,1]<-NULL
+
+#standardize the predictors, so that all have mean of zero and unit variance
+predictors<-decostand(physchem,"standardize", na.rm=TRUE)
+```
+
+
+Now, let's use a stepwise procedure to choose variables for our model.The first model (mod0) sets out a null model without any predictors. The second model (mod1) represents a model with all of the predictors (if you use ~. that means use everything). The ordistep function then starts with the null model and builds toward a full model with all predictors. It will stop when it finds that additional variables don't improve the model. 
+```{r}
+#Let's run a stepwise procedure to see what predictor variables should remain in the RDA
+mod0 <- rda(z ~ 1, predictors)  # Model with intercept only
+mod1 <- rda(z ~ ., predictors)  # Model with all explanatory variables
+ordistep(mod0, scope = formula(mod1), direction="both", perm.max = 10000)
+#The last model in the output is the best model
+```
+
+Now let's run the final model that was selected in the code chunk above. Then, we want to test if our RDA model is statistically significant. The permutest function runs permutation tests to calculate a significance value (analagous to a p-value). If the significance is less than 0.05, then we conclude that our RDA does explain variation in our zooplankton communities.   
+```{r}
+#Run the final model
+final.rda=rda(z~Fish+pH+DOC,data=predictors)
+
+#Is the RDA significant? Run a permuatation test
+permutest(final.rda, permutations = 10000)
+
+#Test for collinearity among predictors in your model using the variance 
+#inflation factor
+vif.cca(final.rda) #values >10 indicate collinearity
+```
+
+Now we should check how much variation can be explained by the RDA axes in our final RDA. We can look at a summary of our RDA result and under the "Importance of components" we can see the proportion of variance explained by each axis (RDA1, RDA2, etc.)
+
+```{r}
+summary(final.rda)
+```
+
+
+Now let's plot our RDA result by lakes
+```{r}
+#pull summary information out of our rda result
+smry <- summary(final.rda)
+df1  <- data.frame(smry$sites[,1:2])       # RDA1 and RDA2
+df2  <- data.frame(smry$species[,1:2])     # loadings for RDA1 and RDA2
+df3<-data.frame(smry$biplot[,1:2])        #predictor variables
+
+#use ggplot2 to make an RDA plot
+ggplot(df1, aes(x=RDA1, y=RDA2)) + 
+  geom_text(aes(label=rownames(df1),colour=lake.status$Status),size=4) +
+  geom_hline(yintercept=0, linetype="dotted") +
+  geom_vline(xintercept=0, linetype="dotted") +
+  coord_fixed()+
+  scale_x_continuous(limits = c(-1.2, 0.7))+
+  labs(color = "Lake status\n") +
+  geom_segment(data=df3, aes(x=0, xend=RDA1, y=0, yend=RDA2), 
+               color="red", arrow=arrow(length=unit(0.01,"npc"))) +
+  geom_text(data=df3, aes(x=RDA1,y=RDA2,label=rownames(df3),
+                hjust=0.5*(1-sign(RDA1)),vjust=0.5*(1-sign(RDA2))), 
+            color="red", size=4)
+```
+
+Now let's make our plot by species
+```{r}
+#pull summary information out of our rda result
+smry <- summary(final.rda)
+df1  <- data.frame(smry$sites[,1:2])       # RDA1 and RDA2
+df2  <- data.frame(smry$species[,1:2])     # loadings for RDA1 and RDA2
+df3<-data.frame(smry$biplot[,1:2])        #predictor variables
+
+#use ggplot2 to make an RDA plot
+ggplot(df2, aes(x=RDA1, y=RDA2)) + 
+  geom_text(aes(label=rownames(df2)),size=4) +
+  geom_hline(yintercept=0, linetype="dotted") +
+  geom_vline(xintercept=0, linetype="dotted") +
+  coord_fixed()+
+  scale_x_continuous(limits = c(-1.2, 0.7))+
+  labs(color = "Lake status\n") +
+  geom_segment(data=df3, aes(x=0, xend=RDA1, y=0, yend=RDA2), 
+               color="red", arrow=arrow(length=unit(0.01,"npc"))) +
+  geom_text(data=df3, aes(x=RDA1,y=RDA2,label=rownames(df3),
+                hjust=0.5*(1-sign(RDA1)),vjust=0.5*(1-sign(RDA2))), 
+            color="red", size=4)
+```
+
+
+
+Next, let's try a cluster analysis on the physical/chemical data from the lakes. Are there groups of lakes that share common characteristics? First, how many clusters should we use? The code below tries between 2 and 15 clusters and makes a plot of the within group sum of squares (wss), which gives you an indication of how much variation is explained by the model. Typically, the wss drops of quickly with the first few divisions, but then adding more clusters has less of an impact. We want to choose a point where adding an additional cluster doesn't seem to improve the wss very much. This is called the elbow method because you are looking for a bend in the curve from rapidly dropping wss to slowly dropping wss.
+```{r}
+# Determine number of clusters
+wss <- (nrow(predictors)-1)*sum(apply(predictors,2,var))
+for (i in 2:15) wss[i] <- sum(kmeans(predictors, 
+  	centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares")
+```
+
+Now let's run the cluster analysis with the optimum number of clusters selected above. Using the aggregate function, we can look at the means of each physical variable in the three clusters we made using k-means cluster analysis. If we want to see which cluster a lake belongs to, we can use fit$cluster.
+```{r}
+# K-Means Cluster Analysis
+fit <- kmeans(predictors, 3) # 3 cluster solution
+
+# get cluster means 
+aggregate(predictors,by=list(fit$cluster),FUN=mean)
+
+#cluster membership
+fit$cluster
+```
+
+Then let's make a plot of our clusters on a PCA. This just combines a PCA plot and puts ellipses around the clusters found in the cluster analysis. To make things more interesting, and help us interpret these clusters, let's color the text in the plot according to the lake status (acidic, neutral, recovered).
+```{r}
+
+#first, let's write a function to create a list of colors to match lake status
+my.colors=function(x){
+  if(x=="Acidic") return("red")
+  if(x=="Neutral") return("green")
+  if(x=="Recovered") return("blue")
+}
+
+#apply our function to our lake status list and get the colors returned
+status.colors=sapply(lake.status$Status,FUN=my.colors)
+
+#create our PCA plot with clusters outlined
+clusplot(predictors, fit$cluster, color=T, shade=F, 
+  	labels=3, lines=0,col.txt=status.colors)
+```
+
