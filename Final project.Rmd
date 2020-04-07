@@ -15,7 +15,10 @@ library(PMCMRplus)
 if (!require("car")) install.packages("car")
 library(car)
 #downloads/installs packages and loads them
+```
 
+
+```{r}
 AcuteData = read.csv("48hr acute Sodium Nitrate test mod.csv", fileEncoding="UTF-8-BOM")
 #Loads the csv file
 ```
@@ -24,6 +27,7 @@ AcuteData = read.csv("48hr acute Sodium Nitrate test mod.csv", fileEncoding="UTF
 ```{r}
 boxplot(AcuteData[which(AcuteData$Time=='48'),]$Percent.Immobilized~AcuteData[which(AcuteData$Time=='48'),]$Conc, xlab="Concentration g/L", ylab = "% of organisms immobilized", col="cyan")
 #Generates a boxplot of the concentration vs the percent immobilized
+#figure 1
 ```
 
 
@@ -39,12 +43,14 @@ fit <- aov(x ~ g)
 ```{r}
 summary.aov(fit)
 #tests the ANOVA to show if all the means are equal. A significant results indicates that not all means are equal.
+#table 1
 ```
 
 
 ```{r}
 TukeyHSD(fit)
 #Runs the Tukey test on the ANOVA. a p adjusted value of <0.05 indicates a significant diference
+#table 2
 ```
 
 
@@ -55,36 +61,28 @@ TukeyHSD(fit)
 ```{r}
 summary(dunnettTest(x, g, alternative = "greater"))
 #Runs the Dunnett test. A p value of <0.05 indicates a significant diference.
+#Table 3
 ```
 
-The first assumption of an ANOVA is that the samples were taken in a random fashion which is not easily testable
-
-
-
-
-The second assumption is that the residuals are normally distributed. we test this by running a shapiro wilk test on the residuals
 ```{r}
 shapiro.test(fit$residuals)
-#runs shapiro wilk test to determine if the residuals are normally distributed
+#runs shapiro wilk test to determine if the residuals are normally distributed6
+#Table 4
+
 hist(fit$residuals)
 #Generates a histogram to confirm shapiro wilks test result
+#figure 2
+
 qqPlot(fit$residuals)
 #Generates a Q-Q plot to confirm shapiro wilks test result
-
+#figure 3
 ```
-Since the p-value is 0.01415 which is less than 0.05 we reject the null hypothesis of the test that the residuals are normally distributed. This means the Killarney data set fails assumption 2.
 
-Assumption 3 is that all populations have a similar variance and is tested with levene's test.
 ```{r}
 bartlett.test(x ~ g)
+#table 5
+
 leveneTest(x,g)
+#table 6
 #these two tests confirm that the amount of variance in each comparison group is equal
 ```
-
-
-
-
-
-
-
-
