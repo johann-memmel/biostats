@@ -1,0 +1,86 @@
+---
+title: "Time-Series"
+author: "Gray"
+date: "March 13, 2018"
+output: word_document
+---
+
+Run the startup to load the necessary library. You may need to install tseries
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tseries)
+```
+
+Don't forget to set your working directory!
+```{r}
+setwd("C:/Users/dgray/OneDrive - Wilfrid Laurier University/Grad stats/Homework")
+beer=read.csv(file="beer.csv",header=FALSE)
+head (beer)
+```
+
+Plot the raw data, the ACF, and the PACF
+```{r}
+par(mfrow=c(2,2)) #divides plot into 4 spaces (2x2)
+a=ts(beer[,2],start=1900,frequency=10) #create a time series using the ts function
+plot(a,type="l",main="Raw Data",xlab="Time",ylab="Beer Sales") #plot raw data
+
+#ACF and PACF plots of un-differenced data
+acf(a,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="Raw data") #plot the ACF
+pacf(a,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="Raw data") #plot the PACF
+qqnorm(a,ylab='Normal Score',main='Raw data', pch=19,col='red',cex=1.5,cex.axis=1.5,cex.lab=1.5) #qqplot to check normality
+qqline(a,lwd=2,col='blue') #qqline for normality plot
+
+```
+
+Difference the data and examine the residuals
+```{r}
+beer.diff=diff(beer[,2]) #difference the data
+b=ts(beer.diff,start=1900,frequency=10) #create a time series from the differenced data
+par(mfrow=c(2,2)) #create a 2x2 plot window
+plot(b,type="l",main="Differenced data",xlab="Year",ylab="Beer Sales") #raw data plot of difference data
+
+acf(beer.diff,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="Differenced data") #acf plot
+pacf(beer.diff,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="Differenced data") #pacf plot
+qqnorm(beer.diff,ylab='Normal Score',main='Differenced data', pch=19,col='red',cex=1.5,cex.axis=1.5,cex.lab=1.5) #qqplot
+qqline(beer.diff,lwd=2,col='blue')
+
+```
+
+ARIMA models have 3 components (p,d,q). The p and q components are the AR and MA terms respectively.  The d component is the differencing component. Our differencing exercise (above) indicates that a model with a d component equal to 1 might fit the model.
+```{r}
+Mod1 <- arima(a,order=c(1,1,1))
+Mod1
+err1 <- Mod1$residuals
+err1 <- ifelse(is.na(err1),0,err1)  # set NAs to 0
+
+# Diagnostics on residuals
+par(mfrow=c(2,2))
+acf(err1,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="ARIMA (1,1,1) residuals")
+pacf(err1,col='blue',lwd=1.5,cex.lab=1.5,cex.axis=1.5,main="ARIMA (1,1,1) residuals")
+qqnorm(err1,ylab='Normal Score',main='Normal Probability Plot of ARIMA (1,1,1) model',
+  pch=19,col='red',cex=1.5,cex.axis=1.5,cex.lab=1.5)
+qqline(err1,lwd=2,col='blue')
+
+```
+
+How well do observed and predicted data correspond visually?
+```{r}
+plot(a,type="l",main="Beer Sales vs Predicted",xlab="Time",ylab="Beer Sales")
+lines(a-err1, col="red")
+legend("topleft", legend=c("Observed", "Fitted"), lty=c(1,1), col=c("black","red"))
+
+```
+
+Forecast beer sales into the future by 10 years
+```{r}
+beer.pred=predict(Mod1, n.ahead=100)
+beer.pred
+plot(a, type="l",main="Predicted Beer Sales 1-Year",xlab="Year",ylab="Sales")
+lines(beer.pred$pred, col="red")
+lines(beer.pred$pred + 2*beer.pred$se, col="red", lty=3)    #Creates upper bound of confidence interval
+lines(beer.pred$pred - 2*beer.pred$se, col="red", lty=3)    #Creates lower bound of confidence interval
+legend("topleft", legend=c("Observed", "Predicted", "Confidence Interval"), lty=c(1,1,3), col=c("black","red", "red"))
+
+
+```
+
